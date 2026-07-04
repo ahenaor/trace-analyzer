@@ -1,30 +1,35 @@
 import os
+import psutil
 import tempfile
-
 import streamlit as st
-
 from src.mp3_inspector import obtener_info_mp3
 
 
+# Función para obtener memoria
+def get_memory_usage():
+    process = psutil.Process()
+    return process.memory_info().rss / (1024 * 1024)  # En MB
+
+
+
 st.set_page_config(
-    page_title="Audio Radiografía",
+    page_title="MP3 File Analyzer",
     page_icon="🎧",
     layout="centered",
 )
 
 
-st.title("Audio Radiografía")
+st.title("MP3 File Analyzer")
 st.caption(
-    "Sube un archivo .mp3 para extraer su radiografía física, técnica y etiquetas ID3."
+    "Upload an .mp3 file to extract, parse, and visualize its physical, technical, and ID3 tag metadata. "
+    "This is a sandbox project to test audio processing performance on Streamlit Cloud."
 )
 
-
 archivo_subido = st.file_uploader(
-    "Selecciona un archivo MP3",
+    "Select an MP3 file",
     type=["mp3"],
     accept_multiple_files=False,
 )
-
 
 st.write("")
 
@@ -32,19 +37,18 @@ col_izq, col_centro, col_der = st.columns([3, 2, 3])
 
 with col_centro:
     boton_procesar = st.button(
-        "Procesar archivo",
+        "Process File",
         use_container_width=True,
         type="primary",
+        key="boton_procesar_mp3"
     )
 
-
 st.divider()
-
 
 if boton_procesar:
     if archivo_subido is None:
         st.warning(
-            "Por favor, selecciona o arrastra un archivo .mp3 antes de hacer clic en Procesar."
+            "Please select or drag and drop an .mp3 file before clicking Process File."
         )
         st.stop()
 
@@ -87,3 +91,8 @@ if boton_procesar:
     finally:
         if temp_path and os.path.exists(temp_path):
             os.remove(temp_path)
+
+st.divider()
+
+# Integración del monitor de memoria en la parte central
+st.metric("System Memory Usage", f"{get_memory_usage():.2f} MB")

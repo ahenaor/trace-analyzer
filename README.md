@@ -47,3 +47,12 @@ python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 streamlit run app.py
+
+
+#https://knowledgegpt.streamlit.app/
+#https://lofi-converter-gui-web.streamlit.app/
+#https://extras.streamlit.app/
+
+#https://topcompaniesmarketcap-7rqhuxkbjdghfaduzg8kwq.streamlit.app/
+
+#https://docs.streamlit.io/develop/api-reference/user/st.login
