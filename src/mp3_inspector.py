@@ -1,5 +1,5 @@
 import os
-from mutagen.mp3 import MP3, HeaderNotFoundError
+from mutagen.mp3 import MP3, HeaderNotFoundError, BitrateMode
 from mutagen.easyid3 import EasyID3
 from mutagen.id3 import ID3NoHeaderError
 
@@ -15,6 +15,13 @@ MPEG_VERSIONS = {
     1: "MPEG-1",
     2: "MPEG-2",
     2.5: "MPEG-2.5",
+}
+
+BITRATE_MODES = {
+    BitrateMode.UNKNOWN: "Desconocido",
+    BitrateMode.CBR: "CBR",
+    BitrateMode.VBR: "VBR",
+    BitrateMode.ABR: "ABR",
 }
 
 
@@ -40,13 +47,26 @@ def obtener_info_mp3(path: str) -> dict:
 
         try:
             tags = EasyID3(path)
+            tags = {k: list(v) for k, v in tags.items()}
         except ID3NoHeaderError:
             tags = {}
 
         minutos, segundos = divmod(int(info.length), 60)
 
-        bitrate_kbps = info.bitrate // 1000 if info.bitrate else "No disponible"
-        sample_rate_khz = info.sample_rate / 1000 if info.sample_rate else "No disponible"
+        bitrate_kbps = (
+            info.bitrate // 1000
+            if getattr(info, "bitrate", None)
+            else "No disponible"
+        )
+
+        sample_rate_khz = (
+            info.sample_rate / 1000
+            if getattr(info, "sample_rate", None)
+            else "No disponible"
+        )
+
+        bitrate_mode = getattr(info, "bitrate_mode", BitrateMode.UNKNOWN)
+        bitrate_mode_label = BITRATE_MODES.get(bitrate_mode, str(bitrate_mode))
 
         return {
             "exito": True,
@@ -58,9 +78,10 @@ def obtener_info_mp3(path: str) -> dict:
                 "Canales": f"{'Estéreo' if info.channels == 2 else 'Mono'} ({info.channels})",
                 "Sample Rate": f"{sample_rate_khz} kHz",
                 "Bitrate": f"{bitrate_kbps} kbps",
+                "Modo de Bitrate": bitrate_mode_label,
+                "Es VBR": "Sí" if bitrate_mode == BitrateMode.VBR else "No",
                 "Modo MPEG": MPEG_MODES.get(info.mode, str(info.mode)),
                 "Versión MPEG": MPEG_VERSIONS.get(info.version, str(info.version)),
-                "VBR": "Sí" if getattr(info, "bitrate_mode", None) == 1 else "No",
             },
             "etiquetas": tags,
         }

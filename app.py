@@ -5,13 +5,13 @@ from src.mp3_inspector import obtener_info_mp3
 from src.utils import get_memory_usage
 
 st.set_page_config(
-    page_title="MP3 File Analyzer",
+    page_title="Trace Analyzer",
     page_icon="🎧",
     layout="centered",
 )
 
 st.title(
-    "🎧 :red[MP3] File Analyzer",
+    "🎧 Trace Analyzer - :red[MP3] Technical Inspection",
     width="stretch",
     text_alignment="center",
     anchor="ppal",
