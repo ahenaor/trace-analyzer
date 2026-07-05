@@ -2,6 +2,8 @@ import os
 import tempfile
 import streamlit as st
 from src.mp3_inspector import obtener_info_mp3
+from src.m4a_inspector import obtener_info_m4a
+from src.audio_converter import convertir_mp3_a_m4a
 from src.utils import get_memory_usage
 
 st.set_page_config(
@@ -11,7 +13,7 @@ st.set_page_config(
 )
 
 st.title(
-    "🎧 Trace Analyzer - :red[MP3] Technical Inspection",
+    "🎧 Trace Analyzer - :red[MP3]",
     width="stretch",
     text_alignment="center",
     anchor="ppal",
@@ -57,33 +59,103 @@ if boton_procesar:
             temp_path = temp_file.name
 
         resultados = obtener_info_mp3(temp_path)
+        if resultados["exito"]:
+            st.subheader("Archivo original")
 
-        if not resultados["exito"]:
-            st.error(resultados["error"])
-            st.stop()
+            # Fila 1: Características Físicas (2 columnas, mucho espacio)
+            col_peso, col_duracion = st.columns(2)
+            with col_peso:
+                st.metric("Peso", resultados["fisicos"].get("Peso", "N/A"), border=True, width="stretch")
+            with col_duracion:
+                st.metric("Duración", resultados["fisicos"].get("Duración", "N/A"), border=True, width="stretch")
 
-        st.divider()
+            # Fila 2: Características Técnicas (3 columnas)
+            col_bit, col_sample, col_canales = st.columns(3)
+            with col_bit:
+                st.metric("Bitrate", resultados["tecnicos"].get("Bitrate", "N/A"), border=True, width="stretch")
+            with col_sample:
+                st.metric("Sample Rate", resultados["tecnicos"].get("Sample Rate", "N/A"), border=True, width="stretch")
+            with col_canales:
+                st.metric("Canales", resultados["tecnicos"].get("Canales", "N/A"), border=True, width="stretch")
+            
+            st.divider()
 
-        col_res1, col_res2 = st.columns(2)
+            archivo_convertido_path = temp_path.replace(".mp3", "_optimized.m4a")
 
-        with col_res1:
-            st.subheader("Physical characteristics")
-            st.table(resultados["fisicos"])
+            with st.spinner("Convirtiendo audio a M4A / AAC / mono / 16 kHz / 64k..."):
+                conversion = convertir_mp3_a_m4a(
+                    archivo_entrada=temp_path,
+                    archivo_salida=archivo_convertido_path,
+                    bitrate="64k",
+                )
+            
+            if conversion["exito"]:
+                resultados_convertido = obtener_info_m4a(archivo_convertido_path)
 
-            st.subheader("ID3 Tags")
+                if resultados_convertido["exito"]:
+                    st.subheader("Archivo optimizado para transcripción")
 
-            if resultados["etiquetas"]:
-                tags_limpios = {
-                    str(k).capitalize(): v[0] if isinstance(v, list) and v else v
-                    for k, v in resultados["etiquetas"].items()
-                }
-                st.table(tags_limpios)
+                    col_peso_opt, col_duracion_opt = st.columns(2)
+
+                    with col_peso_opt:
+                        st.metric("Peso optimizado", resultados_convertido["fisicos"].get("Peso", "N/A"), border=True, width="stretch",)
+
+                    with col_duracion_opt:
+                        st.metric("Duración", resultados_convertido["fisicos"].get("Duración", "N/A"), border=True, width="stretch",)
+
+                    col_bit_opt, col_sample_opt, col_canales_opt = st.columns(3)
+
+                    with col_bit_opt:
+                        st.metric(
+                            "Bitrate",
+                            resultados_convertido["tecnicos"].get("Bitrate", "N/A"),
+                            border=True,
+                            width="stretch",
+                        )
+
+                    with col_sample_opt:
+                        st.metric(
+                            "Sample Rate",
+                            resultados_convertido["tecnicos"].get("Sample Rate", "N/A"),
+                            border=True,
+                            width="stretch",
+                        )
+
+                    with col_canales_opt:
+                        st.metric(
+                            "Canales",
+                            resultados_convertido["tecnicos"].get("Canales", "N/A"),
+                            border=True,
+                            width="stretch",
+                        )
+
+                    with open(archivo_convertido_path, "rb") as file:
+                        st.download_button(
+                            label="Download optimized M4A",
+                            data=file,
+                            file_name="audio_optimized_for_transcription.m4a",
+                            mime="audio/mp4",
+                            type="primary",
+                            icon=":material/download:",
+                            width="stretch",
+                        )
+
+                else:
+                    st.warning(
+                        "El archivo fue convertido, pero no fue posible leer sus metadatos técnicos."
+                    )
+                    st.error(resultados_convertido["error"])
+
             else:
-                st.info("This file does not contain ID3 tags.")
+                st.error(conversion["error"])
 
-        with col_res2:
-            st.subheader("Technical Details")
-            st.table(resultados["tecnicos"])
+                if conversion.get("detalle"):
+                    with st.expander("Ver detalle técnico del error"):
+                        st.code(conversion["detalle"])
+
+        else:
+            st.error(resultados["error"])
+
 
     finally:
         if temp_path and os.path.exists(temp_path):
@@ -91,6 +163,8 @@ if boton_procesar:
 
 st.divider()
 
-# Integración del monitor de memoria en la parte central
-st.metric("System Memory Usage", f"{get_memory_usage():.2f} MB")
+_, col_cc, _ = st.columns([3, 3, 3])
+with col_cc:
+    # Integración del monitor de memoria en la parte central
+    st.metric("System Memory Usage", f"{get_memory_usage():.2f} MB")
 
