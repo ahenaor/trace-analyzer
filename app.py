@@ -1,16 +1,8 @@
 import os
-import psutil
 import tempfile
 import streamlit as st
 from src.mp3_inspector import obtener_info_mp3
-
-
-# Función para obtener memoria
-def get_memory_usage():
-    process = psutil.Process()
-    return process.memory_info().rss / (1024 * 1024)  # En MB
-
-
+from src.utils import get_memory_usage
 
 st.set_page_config(
     page_title="MP3 File Analyzer",
@@ -18,32 +10,37 @@ st.set_page_config(
     layout="centered",
 )
 
-
-st.title("MP3 File Analyzer")
+st.title(
+    "🎧 :red[MP3] File Analyzer",
+    width="stretch",
+    text_alignment="center",
+    anchor="ppal",
+    #help="help",
+)
 st.caption(
     "Upload an .mp3 file to extract, parse, and visualize its physical, technical, and ID3 tag metadata. "
     "This is a sandbox project to test audio processing performance on Streamlit Cloud."
 )
 
-archivo_subido = st.file_uploader(
-    "Select an MP3 file",
-    type=["mp3"],
-    accept_multiple_files=False,
-)
+_, col_c, _ = st.columns([2, 5, 2])
 
-st.write("")
-
-col_izq, col_centro, col_der = st.columns([3, 2, 3])
-
-with col_centro:
-    boton_procesar = st.button(
-        "Process File",
-        use_container_width=True,
-        type="primary",
-        key="boton_procesar_mp3"
+with col_c:
+    archivo_subido = st.file_uploader(
+    label="",
+        type=["mp3"],
+        accept_multiple_files=False,
+        width="stretch",
     )
 
-st.divider()
+with col_c:
+    boton_procesar = st.button(
+        "Process File",
+        type="primary",
+        icon=":material/play_arrow:",
+        icon_position="right",
+        width="stretch",     
+        key="process_file_button"
+    )
 
 if boton_procesar:
     if archivo_subido is None:
@@ -65,15 +62,15 @@ if boton_procesar:
             st.error(resultados["error"])
             st.stop()
 
-        st.success(f"Archivo analizado correctamente: **{archivo_subido.name}**")
+        st.divider()
 
         col_res1, col_res2 = st.columns(2)
 
         with col_res1:
-            st.subheader("Características físicas")
+            st.subheader("Physical characteristics")
             st.table(resultados["fisicos"])
 
-            st.subheader("Metadatos ID3")
+            st.subheader("ID3 Tags")
 
             if resultados["etiquetas"]:
                 tags_limpios = {
@@ -82,10 +79,10 @@ if boton_procesar:
                 }
                 st.table(tags_limpios)
             else:
-                st.info("Este archivo no contiene etiquetas ID3.")
+                st.info("This file does not contain ID3 tags.")
 
         with col_res2:
-            st.subheader("Detalles técnicos")
+            st.subheader("Technical Details")
             st.table(resultados["tecnicos"])
 
     finally:
@@ -96,3 +93,4 @@ st.divider()
 
 # Integración del monitor de memoria en la parte central
 st.metric("System Memory Usage", f"{get_memory_usage():.2f} MB")
+
