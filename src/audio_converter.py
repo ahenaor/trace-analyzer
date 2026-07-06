@@ -3,44 +3,44 @@ import subprocess
 from pathlib import Path
 
 
-def convertir_mp3_a_m4a(
+def convertir_audio_a_m4a(
     archivo_entrada: str,
     archivo_salida: str,
-    bitrate: str = "32k",
+    bitrate: str = "64k",
     sample_rate: int = 16000,
     channels: int = 1,
 ) -> dict:
     """
-    Convierte un archivo .mp3 a .m4a optimizado para transcripción.
+    Convierte un archivo de audio soportado a .m4a optimizado para transcripcion.
 
     Especificaciones por defecto:
     - Contenedor: .m4a
     - Codec: AAC
     - Canales: mono
     - Sample rate: 16 kHz
-    - Bitrate: 32 kbps
+    - Bitrate: 64 kbps
 
     Parameters
     ----------
     archivo_entrada : str
-        Ruta local del archivo MP3 de entrada.
+        Ruta local del archivo de entrada.
 
     archivo_salida : str
-        Ruta local donde se guardará el archivo M4A optimizado.
+        Ruta local donde se guardara el archivo M4A optimizado.
 
     bitrate : str, optional
-        Bitrate de salida. Por defecto "32k".
+        Bitrate de salida. Por defecto "64k".
 
     sample_rate : int, optional
         Frecuencia de muestreo de salida. Por defecto 16000.
 
     channels : int, optional
-        Número de canales de salida. Por defecto 1.
+        Numero de canales de salida. Por defecto 1.
 
     Returns
     -------
     dict
-        Diccionario con estado de éxito, ruta de salida y mensaje de error si aplica.
+        Diccionario con estado de exito, ruta de salida y mensaje de error si aplica.
     """
     try:
         if not os.path.exists(archivo_entrada):
@@ -52,7 +52,7 @@ def convertir_mp3_a_m4a(
         if not archivo_salida.lower().endswith(".m4a"):
             return {
                 "exito": False,
-                "error": "El archivo de salida debe tener extensión .m4a.",
+                "error": "El archivo de salida debe tener extension .m4a.",
             }
 
         Path(archivo_salida).parent.mkdir(parents=True, exist_ok=True)
@@ -66,6 +66,8 @@ def convertir_mp3_a_m4a(
             "-i",
             archivo_entrada,
             "-vn",
+            "-map",
+            "0:a:0",
             "-c:a",
             "aac",
             "-ac",
@@ -99,20 +101,27 @@ def convertir_mp3_a_m4a(
         return {
             "exito": False,
             "error": (
-                "No se encontró FFmpeg en el sistema. "
-                "Verifica que esté instalado y disponible en el PATH."
+                "No se encontro FFmpeg en el sistema. "
+                "Verifica que este instalado y disponible en el PATH."
             ),
         }
 
     except subprocess.CalledProcessError as e:
         return {
             "exito": False,
-            "error": "FFmpeg falló durante la conversión.",
+            "error": "FFmpeg fallo durante la conversion.",
             "detalle": e.stderr,
         }
 
     except Exception as e:
         return {
             "exito": False,
-            "error": f"Error inesperado durante la conversión: {e}",
+            "error": f"Error inesperado durante la conversion: {e}",
         }
+
+
+def convertir_mp3_a_m4a(*args, **kwargs) -> dict:
+    """
+    Wrapper de compatibilidad. Usa convertir_audio_a_m4a para nuevos desarrollos.
+    """
+    return convertir_audio_a_m4a(*args, **kwargs)
