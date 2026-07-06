@@ -118,10 +118,3 @@ def convertir_audio_a_m4a(
             "exito": False,
             "error": f"Error inesperado durante la conversion: {e}",
         }
-
-
-def convertir_mp3_a_m4a(*args, **kwargs) -> dict:
-    """
-    Wrapper de compatibilidad. Usa convertir_audio_a_m4a para nuevos desarrollos.
-    """
-    return convertir_audio_a_m4a(*args, **kwargs)
